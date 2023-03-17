@@ -30,7 +30,7 @@ typedef struct{
 }token;
 
 char* KEYWORDS[] = {"xor","ls","rs","lr","rr","not"};
-
+int a;
 /*
  * These functions will receive an iterator pointer when their corresponding type first encountered.
  * They will read from pointer until an unrelevant char was encountered and then they will return the token or throw error.
