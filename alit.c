@@ -153,11 +153,11 @@ Token *get_tokens(char *input) {
 
 int main()
 {
-	char line[100] = "(rs(8, 1) & (not(8) | ls(6, 2))) + not(2)";
+	char line[256] = "(rs (8, 1) & (not(8) | ls(6, 2))) + not(2)";
 
 	Token *tokens = get_tokens(line);
 	for (int i = 0; i < 20; i++) {
-       printf("%s , ", tokens[i].value);
+       printf("%s", tokens[i].value);
 	}
 	return 0;
 }
