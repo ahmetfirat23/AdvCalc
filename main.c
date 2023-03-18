@@ -239,7 +239,7 @@ int main() {
     char** vars = calloc(128 ,sizeof(char*));
     int last_var_idx = 0;
     char line[256+1] = "";
-    printf("%s",">");
+    printf("%s ",">");
     while(fgets(line, sizeof(line), stdin)){
         //printf("%s\n",line);
         if(line == NULL){
@@ -258,7 +258,10 @@ int main() {
                 token += 1;
             }
         }
-        printf("%s",">");
+        else{
+            printf("Error!\n");
+        }
+        printf("%s ",">");
     }
 }
 //int main() {

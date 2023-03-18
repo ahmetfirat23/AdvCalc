@@ -1,4 +1,4 @@
-/a.exe
+*.exe
 /cmake-build-debug/
 /main.o
 .idea
