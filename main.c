@@ -205,6 +205,8 @@ int lexer(char *p, int length, token* tokens, char* p_equal){ // Initialize p_eq
             token = sign_parser(&p);
 
             if(token.token_type==COMMENT){
+                token = eol_parser();
+                tokens[idx] = token;
                 break;
             }
         }
