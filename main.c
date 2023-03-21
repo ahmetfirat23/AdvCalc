@@ -527,6 +527,9 @@ int reformat_token_list(struct token** head){
 }
 
  int calculate (struct token *head) {
+    if(head->token_type == NOT) {
+        head = head->next;
+    }
     struct token *temp_head = head;
 
 //     Loop for parentheses
@@ -612,7 +615,21 @@ int reformat_token_list(struct token** head){
 //     Detect close paranthesis
 
     if (head->next->token_type == CLOSE_P) {
+        if (head->prev->prev->token_type == NOT) {
+            int val;
 
+            sscanf(head->token_val, "%d", &val);
+            char string_result[16];
+            sprintf(string_result,"%d", ~val);
+            strcpy(head->token_val, string_result);
+            if (head->prev->prev->prev == NULL) {
+                head->prev->prev = NULL;
+            }
+            else {
+                head->prev->prev->prev->next = head->prev;
+                head->prev->prev = head->prev->prev->prev;
+            }
+        }
         head->prev->next = head->next->next;
         head->next->next->prev = head->prev;
     }
@@ -661,8 +678,30 @@ int main() {
                 error_code = reformat_token_list(&head);}
             }
             if (error_code == 0) {
-                int res = calculate(head);
-                printf("%d\n", res);
+                if (head->token_type != EOL) {
+                    if (p_equal != NULL) {
+                   int res = calculate(p_equal->next);
+                   char *var_name = p_equal->prev->token_val;
+                   int declared = 0;
+                   for(int i = 0; i <= VAR_IDX; i++) {
+                    if (strcmp(VAR_KEYS[i], var_name) == 0) {
+                        VARS[i] = res;
+                        declared = 1;
+                        break;
+                        }
+                   }
+                   if (declared == 0) {
+                        VARS[VAR_IDX] = res;
+                        VAR_KEYS[VAR_IDX] = var_name;
+                        VAR_IDX++;
+                   }
+
+                }
+                else {
+                    int res = calculate(head);
+                    printf("%d\n", res);
+                }
+                }
             }
             else{
                 printf("Error!\n");
