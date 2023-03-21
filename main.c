@@ -26,10 +26,12 @@ typedef enum{
     EOL,
 }token_type;
 
-typedef struct{
+struct token{
     token_type token_type;
     char token_val[256];
-}token;
+    struct token * next;
+    struct token * prev;
+};
 
 char* KEYWORDS[] = {"xor","ls","rs","lr","rr","not"};
 char SIGNS[] ={'=','+','-','*','&','|','(',')',',','%'};
@@ -62,8 +64,8 @@ int is_keyword(char* word){
 /*
  * Returns token of type function or variable
  * */
-token func_and_var_parser(char ** exp){
-    token token;
+struct token func_and_var_parser(char ** exp){
+    struct token token;
     char str[256+1] = "";
     int idx = 0;
     while(isalpha(**exp)){
@@ -101,8 +103,8 @@ token func_and_var_parser(char ** exp){
 /*
  * Returns token of type integer
  * */
-token int_parser(char** exp){
-    token token;
+struct token int_parser(char** exp){
+    struct token token;
     char num[256+1] = "";
     int idx = 0;
     while(isdigit(**exp)){
@@ -118,8 +120,8 @@ token int_parser(char** exp){
 /*
  * Returns token of type operator, parenthesis, comma or equal sign
  * */
-token sign_parser(char **exp){
-    token token;
+struct token sign_parser(char **exp){
+    struct token token;
     if(**exp=='='){
         token.token_type = EQUAL;
     }
@@ -155,8 +157,8 @@ token sign_parser(char **exp){
     return token;
 }
 
-token eol_parser(){
-    token token;
+struct token eol_parser(){
+    struct token token;
     token.token_type = EOL;
     strcpy(token.token_val,"<EOL>");
     return token;
@@ -164,7 +166,7 @@ token eol_parser(){
 /*
  * Returns token of type variable
  * */
-token lhs_parser(char* exp){
+struct token lhs_parser(char* exp){
 
 }
 
@@ -172,14 +174,23 @@ token lhs_parser(char* exp){
  * Return 0 on success
  * Return -1 on error
  * */
-int lexer(char *p, int length, token* tokens, char* p_equal){ // Initialize p_equal to NULL
+int lexer(char *p, int length, struct token** head, struct token** tail, struct token** p_equal){ // Initialize p_equal to NULL
     int idx = 0;
-    p_equal = NULL; //for safety
-    token token;
+    struct token * prev_token;
     for(int i = 0; i<length; i++){
+        struct token * token = malloc(sizeof(struct token));
         if(*p=='\n'){
-            token = eol_parser();
-            tokens[idx] = token;
+            (*token) = eol_parser();
+            (*tail) = token;
+            if((*head)==NULL){
+                (*head) = token;
+                (*head)->next = NULL;
+                (*head)->prev = NULL;
+            }
+            else{
+                prev_token->next = (*tail);
+                (*tail)->prev = prev_token;
+            }
             break;
         }
         else if(isspace(*p)){
@@ -187,38 +198,62 @@ int lexer(char *p, int length, token* tokens, char* p_equal){ // Initialize p_eq
             continue;
         }
         else if(isalpha(*p)){
-            token = func_and_var_parser(&p);
+            (*token) = func_and_var_parser(&p);
         }
         else if(isdigit(*p)){
-            token = int_parser(&p);
+            (*token) = int_parser(&p);
         }
         else if(is_sign(*p)){
-            if(*p=='='){
-                if(p_equal==NULL){
-                    p_equal = p;
+            (*token) = sign_parser(&p);
+
+            if(*(p-1)=='='){
+                if((*p_equal)==NULL){
+                    (*p_equal) = token;
                 }
                 else{
                     return -1;
                 }
             }
 
-            token = sign_parser(&p);
-
-            if(token.token_type==COMMENT){
-                token = eol_parser();
-                tokens[idx] = token;
+            if((*token).token_type==COMMENT){
+                (*token) = eol_parser();
+                (*tail) = token;
+                if((*head)==NULL){
+                    (*head) = token;
+                    (*head)->next = NULL;
+                    (*tail)->prev = NULL;
+                }
+                else{
+                    prev_token->next = (*tail);
+                    (*tail)->prev = prev_token;
+                }
                 break;
             }
         }
         else{
             return -1;
         }
-        tokens[idx] = token;
+        if ((*head)==NULL){
+            (*head) = token;
+            (*head)->prev = NULL;
+        }
+        else{
+            prev_token->next = token;
+            (*token).prev = prev_token;
+        }
+        prev_token = token;
         idx++;
     }
     return 0;
 }
 
+int assign_syntax_checker(struct token* tokens, char * p_equal, int length){
+    struct token *token = tokens;
+}
+
+int exp_syntax_checker(struct token* tokens, int length){
+
+}
 /*
  * In the first loop of line:
  * Each position will be read one by one.
@@ -246,16 +281,25 @@ int main() {
             break;
         }
         char *p = line;
-        token tokens[256];
-        char *equal_p = NULL;
-        if(lexer(p, strlen(p),tokens,equal_p)!=-1){
-            token* token = tokens;
+        struct token *head = NULL;
+        struct token * tail = NULL;
+        struct token *equal_p = NULL;
+        if(lexer(p, strlen(p), &head, &tail,&equal_p) != -1){
+            struct token* iter = head;
             int a = 0;
-            while((*token).token_type!=EOL){
+            while(iter->token_type!=EOL){
                 printf("%d:     ",a);
-                printf("%s\n",(*token).token_val);
+                printf("%s\n",iter->token_val);
                 a++;
-                token += 1;
+                iter = iter->next;
+            }
+            iter = tail;
+            a = 0;
+            while(iter->token_type!=VAR){
+                printf("%d:     ",a);
+                printf("%s\n",iter->token_val);
+                a++;
+                iter = iter->prev;
             }
         }
         else{
