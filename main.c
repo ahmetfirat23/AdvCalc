@@ -416,8 +416,8 @@ int reformat_token_list(struct token** head){
             int i = 0;
             iter->token_type = INT;
             while(i<VAR_IDX){
-                if(strcmp(iter->token_val,VAR_KEYS[VAR_IDX])==0){
-                    sprintf(iter->token_val, "%d", VARS[VAR_IDX]);
+                if(strcmp(iter->token_val,VAR_KEYS[i])==0){
+                    sprintf(iter->token_val, "%d", VARS[i]);
                     break;
                 }
                 i++;
