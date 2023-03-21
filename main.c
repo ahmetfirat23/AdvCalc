@@ -389,9 +389,9 @@ int assign_syntax_checker(struct token* head, struct token* p_equal){
     }
 }
 
-int reformat_token_list(struct token* head){
+int reformat_token_list(struct token** head){
     int idx = 0;
-    struct token * iter = head;
+    struct token * iter = *head;
     struct token * stack[256];
     while(iter->token_type!=EOL){
         token_type type = iter->token_type;
@@ -404,6 +404,9 @@ int reformat_token_list(struct token* head){
             struct token * tmp = func->prev;
             if (tmp!=NULL){
             func->prev->next = func->next;
+            }
+            else{
+                *head = func->next;
             }
             func->next->prev = tmp;
             iter->token_type = func->token_type;
@@ -609,20 +612,7 @@ int reformat_token_list(struct token* head){
 //     Detect close paranthesis
 
     if (head->next->token_type == CLOSE_P) {
-        if (head->prev->prev->token_type == NOT) {
-            int val;
-            sscanf(head->prev->token_val, "%d", &val);
-            char string_result[16];
-            sprintf(string_result,"%d", ~val);
-            strcpy(head->prev->token_val, string_result);
-            if (head->prev->prev->prev == NULL) {
-                head->prev->prev = NULL;
-            }
-            else {
-                head->prev->prev->prev->next = head->prev;
-                head->prev->prev = head->prev->prev->prev;
-            }
-        }
+
         head->prev->next = head->next->next;
         head->next->next->prev = head->prev;
     }
@@ -637,6 +627,14 @@ int reformat_token_list(struct token* head){
 
  }
 
+
+ void print_debug(struct token * head){
+     struct token * iter = head;
+     while(iter->token_type!=EOL){
+         printf("%s ",iter->token_val);
+         iter= iter->next;
+     }
+ }
 
 int main() {
     int error_code = 0;
@@ -656,11 +654,11 @@ int main() {
             if (p_equal != NULL) {
                 error_code = assign_syntax_checker(head, p_equal);
                 if(error_code==0){
-                error_code = reformat_token_list(p_equal);}
+                error_code = reformat_token_list(&p_equal);}
             } else {
                 error_code = exp_syntax_checker(head);
                 if(error_code==0){
-                error_code = reformat_token_list(head);}
+                error_code = reformat_token_list(&head);}
             }
             if (error_code == 0) {
                 int res = calculate(head);
