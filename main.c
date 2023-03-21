@@ -249,11 +249,11 @@ int lexer(char *p, int length, struct token** head, struct token** tail, struct 
 
 int exp_syntax_checker(struct token* head){
     struct token* iter = head;
-    int open_p_c = 0;
-    int close_p_c = 0;
-    int comma_c = 0;
-    int func_c = 0;
+    int p_count = 0;
+    int func_count = 0;
     while(iter->token_type!=EOL){
+        if (p_count < 0 || func_count < 0){
+            return -1;}
         token_type type = iter->token_type;
         token_type next_type = iter->next->token_type;
         if(iter->prev==NULL || iter->prev->token_type==EQUAL) {
@@ -268,6 +268,7 @@ int exp_syntax_checker(struct token* head){
                 }
             }
             else if(type==OPEN_P){
+                p_count++;
                 if(next_type==VAR || next_type==INT || next_type==OPEN_P|| next_type==LS
                 || next_type==RS || next_type==LR || next_type==RR || next_type==NOT){
                     iter = iter->next;
@@ -278,6 +279,9 @@ int exp_syntax_checker(struct token* head){
                 }
             }
             else if(type==LS || type==RS || type==LR || type==RR || type==NOT){
+                if(type!=NOT){
+                func_count++;
+                }
                 if(next_type==OPEN_P){
                     iter = iter->next;
                     continue;
@@ -303,6 +307,7 @@ int exp_syntax_checker(struct token* head){
                 }
             }
             else if(type==OPEN_P){
+                p_count++;
                 if(next_type==VAR || next_type==INT || next_type==OPEN_P|| next_type==LS
                    || next_type==RS || next_type==LR || next_type==RR || next_type==NOT){
                     iter = iter->next;
@@ -313,6 +318,7 @@ int exp_syntax_checker(struct token* head){
                 }
             }
             else if(type==CLOSE_P){
+                p_count--;
                 if(next_type==CLOSE_P || next_type==SUM || next_type==MULTI || next_type==MINUS
                    || next_type==B_AND || next_type==B_OR || next_type==B_XOR || next_type==COMMA
                    || next_type==EOL){
@@ -325,6 +331,9 @@ int exp_syntax_checker(struct token* head){
             }
             else if(type==SUM || type==MULTI || type==MINUS || type==B_AND || type==B_OR
                     || type==B_XOR || type == COMMA){
+                if(type==COMMA){
+                    func_count--;
+                }
                 if(next_type==VAR || next_type==INT || next_type==OPEN_P || next_type==LS
                 || next_type==RS || next_type==LR || next_type==RR || next_type==NOT){
                     iter = iter->next;
@@ -335,6 +344,9 @@ int exp_syntax_checker(struct token* head){
                 }
             }
             else if(type==LS || type==RS || type==LR || type==RR || type==NOT){
+                if(type!=NOT){
+                    func_count++;
+                }
                 if(next_type==OPEN_P){
                     iter = iter->next;
                     continue;
@@ -347,6 +359,10 @@ int exp_syntax_checker(struct token* head){
                 return -1;
             }
         }
+
+    }
+    if (p_count!=0 || func_count!=0){
+        return -1;
     }
     return 0;
 }
