@@ -35,6 +35,9 @@ struct token{
 
 char* KEYWORDS[] = {"xor","ls","rs","lr","rr","not"};
 char SIGNS[] ={'=','+','-','*','&','|','(',')',',','%'};
+char* VAR_KEYS[128];
+int VARS[128];
+int VAR_IDX = 0;
 
 int is_sign(char chr){
     for(int i = 0; i< 10;i++){ //There are 10 signs if there is more or less update the number here
@@ -382,7 +385,7 @@ int assign_syntax_checker(struct token* head, struct token* p_equal){
     }
 }
 
-int remove_commas(struct token* head){
+int reformat_token_list(struct token* head){
     int idx = 0;
     struct token * iter = head;
     struct token * stack[256];
@@ -395,10 +398,26 @@ int remove_commas(struct token* head){
         else if(type==COMMA){
             struct token * func = stack[--idx];
             struct token * tmp = func->prev;
+            if (tmp!=NULL){
             func->prev->next = func->next;
+            }
             func->next->prev = tmp;
             iter->token_type = func->token_type;
             strcpy(iter->token_val, func->token_val);
+        }
+        else if(type==VAR){
+            int i = 0;
+            iter->token_type = INT;
+            while(i<VAR_IDX){
+                if(strcmp(iter->token_val,VAR_KEYS[VAR_IDX])==0){
+                    sprintf(iter->token_val, "%d", VARS[VAR_IDX]);
+                    break;
+                }
+                i++;
+            }
+            if(i==VAR_IDX){
+                sprintf(iter->token_val, "%d", 0);
+            }
         }
         iter = iter->next;
     }
@@ -407,6 +426,7 @@ int remove_commas(struct token* head){
     }
     return 0;
 }
+
 /*
  * In the first loop of line:
  * Each position will be read one by one.
@@ -422,142 +442,41 @@ int remove_commas(struct token* head){
  *
  * */
 
-
 int main() {
-    char** vars = calloc(128 ,sizeof(char*));
-    int last_var_idx = 0;
+    int error_code = 0;
     char line[256+1] = "";
     printf("%s ",">");
     while(fgets(line, sizeof(line), stdin)){
-        //printf("%s\n",line);
-        if(line == NULL){
+        error_code = 0;
+        if(line == NULL){ // Stop when CTRL+D
             break;
         }
         char *p = line;
         struct token *head = NULL;
         struct token * tail = NULL;
         struct token *p_equal = NULL;
-        if(lexer(p, strlen(p), &head, &tail,&p_equal) != -1){
-            struct token* iter = head;
-            int a = 0;
-            while(iter->token_type!=EOL){
-                printf("%d:     ",a);
-                printf("%s\n",iter->token_val);
-                a++;
-                iter = iter->next;
+        error_code = lexer(p, strlen(p), &head, &tail,&p_equal);
+        if(error_code==0) {
+            if (p_equal != NULL) {
+                error_code = assign_syntax_checker(head, p_equal);
+                if(error_code==0){
+                error_code = reformat_token_list(p_equal);}
+            } else {
+                error_code = exp_syntax_checker(head);
+                if(error_code==0){
+                error_code = reformat_token_list(head);}
+            }
+            if (error_code == 0) {
+                //OPERATE
+            }
+            else{
+                printf("Error!\n");
             }
         }
         else{
             printf("Error!\n");
-            printf("%s ",">");
-            continue;
         }
-        if(p_equal!=NULL){
-            if(assign_syntax_checker(head, p_equal)!=0){
-                printf("Error!\n");
-                printf("%s ",">");
-                continue;
-            }
-        }
-        else{
-            if(exp_syntax_checker(head)!=0){
-                printf("Error!\n");
-                printf("%s ",">");
-                continue;
-            }
-        }
-        if(remove_commas(head)==0){
-            struct token* iter = head;
-            int a = 0;
-            while(iter->token_type!=EOL){
-                printf("%d:     ",a);
-                printf("%s\n",iter->token_val);
-                a++;
-                iter = iter->next;
-            }
-        }
-        else{
-            printf("Error!");
-            printf("%s ",">");
-            continue;
-        }
+
         printf("%s ",">");
     }
 }
-//int main() {
-//    char** vars = calloc(128, sizeof (char*));
-//    int last_var_idx = 0;
-//    char line[256+1] = "";
-//    printf(">");
-//    token tokens[256];
-//    int last_token_idx = 0;
-//    while(fgets(line,sizeof(line),stdin)) {
-//        printf(line);
-//        if(line == NULL){
-//            break;
-//        }
-//        char tmp[256 + 1],*p;
-//        strcpy(tmp, line);
-//        char *is_assignment = strchr(tmp, '=');
-//        if (is_assignment != NULL) {
-//            if (is_assignment[1] == '=' || strcmp(is_assignment, tmp) == 0) {
-//                printf("Error1");
-//                return -1;
-//            }
-//            strcpy(tmp, line);
-//            char *assignment = strtok_r(tmp, "=", &p);
-//            if (assignment == NULL) {
-//                printf("Error2");
-//                return -1;
-//            }
-//            char *expression = strtok_r(NULL, "=", &p);
-//            short exp_found = 0;
-//            char found_assignment[256] = "";
-//            for (int i = 0; i < strlen(assignment); i++) {
-//                char target = assignment[i];
-//                if (target == ' ') {
-//                    if (exp_found == 0) {
-//                        continue;
-//                    } else if (exp_found == 1) {
-//                        exp_found = 2;
-//                    }
-//                } else if (isalpha(target) != 0) {
-//                    if (exp_found == 0) {
-//                        exp_found = 1;
-//                        char *assign = &assignment[i];
-//                        strcat(found_assignment, assign);
-//                    } else if (exp_found == 1) {
-//                        char *assign = &assignment[i];
-//                        strcat(found_assignment, assign);
-//                    } else if (exp_found == 2) {
-//                        printf("Error3!\n");
-//                        return -1;
-//                    }
-//                } else {
-//                    printf("Error4!");
-//                    return -1;
-//                }
-//            }
-//            if (exp_found == 0) {
-//                printf("Error5!");
-//                return -1;
-//            }
-//
-//            assignment = NULL;
-//
-//            token t1;
-//            t1.token_type = EQUAL;
-//            strcpy(t1.token_val, found_assignment);
-//            tokens[last_token_idx] = t1;
-//            last_token_idx++;
-//
-//            vars[last_var_idx] = found_assignment;
-//            printf("%s\n", vars[last_var_idx]);
-//            last_var_idx++;
-//            printf("%s\n", expression);
-//        }
-//        //char line[256+1] = "";
-//        printf(">");
-//    }
-//    return 0;
-//}
