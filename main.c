@@ -446,6 +446,198 @@ int reformat_token_list(struct token* head){
  *
  * */
 
+
+ void calculate_opr(struct token *head, token_type type) {
+    struct token *left_side = head->prev;
+    struct token *right_side = head->next;
+    int left_value;
+    sscanf(left_side->token_val, "%d", &left_value);
+    int right_value;
+    sscanf(right_side->token_val, "%d", &right_value);
+    int opr_result = 0;
+    switch(type) {
+        case MULTI:
+        {
+         opr_result = left_value * right_value;
+         break;
+        }
+        case SUM:
+        {
+         opr_result = left_value + right_value;
+         break;
+        }
+        case MINUS:
+        {
+         opr_result = left_value - right_value;
+         break;
+        }
+        case B_AND:
+        {
+         opr_result = left_value & right_value;
+         break;
+        }
+        case B_OR:
+        {
+         opr_result = left_value | right_value;
+         break;
+        }
+        case B_XOR:
+        {
+         opr_result = left_value ^ right_value;
+         break;
+        }
+        case LS:
+        {
+         opr_result = left_value << right_value;
+         break;
+        }
+        case RS:
+        {
+         opr_result = left_value >> right_value;
+         break;
+        }
+        case LR:
+        {
+         opr_result = (left_value << right_value) | (left_value >> (32 - right_value));
+         break;
+        }
+        case RR:
+        {
+         opr_result = (left_value >> right_value) | (left_value << (32 - right_value));
+         break;
+        }
+
+        default:
+        {
+            printf("Error! something wrong with calculate_opr()");
+        }
+    }
+
+    char string_result[16];
+
+    sprintf(string_result,"%d", opr_result);
+    strcpy(left_side->token_val, string_result);
+
+    left_side->next = right_side->next;
+    right_side->next->prev = left_side;
+
+}
+
+ int calculate (struct token *head) {
+    struct token *temp_head = head;
+
+//     Loop for parentheses
+
+    while(temp_head->token_type != CLOSE_P &&  temp_head->token_type != EOL) {
+        if (temp_head->token_type == OPEN_P) {
+            int parenthesis_result = calculate(temp_head->next);
+            char string_result[16];
+            sprintf(string_result,"%d", parenthesis_result);
+            temp_head->token_type = INT;
+            strcpy(temp_head->token_val, string_result);
+        }
+        temp_head = temp_head->next;
+    }
+
+
+//     Loop for multiplication
+
+
+    temp_head = head;
+    while (temp_head->token_type != CLOSE_P &&  temp_head->token_type != EOL) {
+        if (temp_head->token_type == MULTI) {
+            calculate_opr(temp_head, MULTI);
+        }
+        temp_head = temp_head->next;
+    }
+
+    temp_head = head;
+
+    while (temp_head->token_type != CLOSE_P &&  temp_head->token_type != EOL) {
+        if (temp_head->token_type == SUM) {
+
+            calculate_opr(temp_head, SUM);
+            //printf("%s\n", temp_head->prev->token_val);
+        }
+        if (temp_head->token_type == MINUS) {
+            calculate_opr(temp_head, MINUS);
+        }
+        temp_head = temp_head->next;
+    }
+
+
+//     Loop for binary operations
+    temp_head = head;
+
+   // printf("%s\n", temp_head->next->token_val);
+    while (temp_head->token_type != CLOSE_P &&  temp_head->token_type != EOL) {
+        if (temp_head->token_type == B_AND) {
+            calculate_opr(temp_head, B_AND);
+        }
+        if (temp_head->token_type == B_OR) {
+            calculate_opr(temp_head, B_OR);
+        }
+        temp_head = temp_head->next;
+    }
+
+
+    // Loop for binary functions
+    temp_head = head;
+
+    while (temp_head->token_type != CLOSE_P &&  temp_head->token_type != EOL) {
+        if (temp_head->token_type == B_XOR) {
+            calculate_opr(temp_head, B_XOR);
+        }
+        if (temp_head->token_type == LS) {
+            calculate_opr(temp_head, LS);
+        }
+        if (temp_head->token_type == RS) {
+            calculate_opr(temp_head, RS);
+        }
+        if (temp_head->token_type == LR) {
+            calculate_opr(temp_head, LR);
+        }
+        if (temp_head->token_type == RR) {
+            calculate_opr(temp_head, RR);
+        }
+        temp_head = temp_head->next;
+    }
+
+
+
+
+//     Detect close paranthesis
+
+    if (head->next->token_type == CLOSE_P) {
+        if (head->prev->prev->token_type == NOT) {
+            int val;
+            sscanf(head->prev->token_val, "%d", &val);
+            char string_result[16];
+            sprintf(string_result,"%d", ~val);
+            strcpy(head->prev->token_val, string_result);
+            if (head->prev->prev->prev == NULL) {
+                head->prev->prev = NULL;
+            }
+            else {
+                head->prev->prev->prev->next = head->prev;
+                head->prev->prev = head->prev->prev->prev;
+            }
+        }
+        head->prev->next = head->next->next;
+        head->next->next->prev = head->prev;
+    }
+
+
+
+    int result;
+
+    //sscanf((tokens->token_type == INT)? tokens->token_val : "0", "%d", &result);
+    sscanf(head->token_val, "%d", &result);
+    return result;
+
+ }
+
+
 int main() {
     int error_code = 0;
     char line[256+1] = "";
@@ -471,7 +663,8 @@ int main() {
                 error_code = reformat_token_list(head);}
             }
             if (error_code == 0) {
-                //OPERATE
+                int res = calculate(head);
+                printf("%d\n", res);
             }
             else{
                 printf("Error!\n");
