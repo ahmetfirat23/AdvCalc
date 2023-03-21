@@ -35,6 +35,10 @@ struct token{
 
 char* KEYWORDS[] = {"xor","ls","rs","lr","rr","not"};
 char SIGNS[] ={'=','+','-','*','&','|','(',')',',','%'};
+/*
+ * VAR_KEYS holds variable names for the lookup table.
+ * VARS holds variable values, and they share indices with VAR_KEYS
+ * */
 char* VAR_KEYS[128];
 int VARS[128];
 int VAR_IDX = 0;
