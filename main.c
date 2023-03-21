@@ -247,13 +247,126 @@ int lexer(char *p, int length, struct token** head, struct token** tail, struct 
     return 0;
 }
 
-int assign_syntax_checker(struct token* tokens, char * p_equal, int length){
-    struct token *token = tokens;
+int exp_syntax_checker(struct token* head){
+    struct token* iter = head;
+    int open_p_c = 0;
+    int close_p_c = 0;
+    int comma_c = 0;
+    int func_c = 0;
+    while(iter->token_type!=EOL){
+        token_type type = iter->token_type;
+        token_type next_type = iter->next->token_type;
+        if(iter->prev==NULL || iter->prev->token_type==EQUAL) {
+            if (type==VAR || type==INT) {
+                if(next_type==SUM || next_type==MULTI || next_type==MINUS || next_type==B_AND
+                || next_type==B_OR || next_type==B_XOR || next_type==EOL){
+                    iter = iter->next;
+                    continue;
+                }
+                else{
+                    return -1;
+                }
+            }
+            else if(type==OPEN_P){
+                if(next_type==VAR || next_type==INT || next_type==OPEN_P|| next_type==LS
+                || next_type==RS || next_type==LR || next_type==RR || next_type==NOT){
+                    iter = iter->next;
+                    continue;
+                }
+                else{
+                    return -1;
+                }
+            }
+            else if(type==LS || type==RS || type==LR || type==RR || type==NOT){
+                if(next_type==OPEN_P){
+                    iter = iter->next;
+                    continue;
+                }
+                else{
+                    return -1;
+                }
+            }
+            else{
+                return -1;
+            }
+        }
+        else{
+            if (type==VAR || type==INT) {
+                if(next_type==CLOSE_P || next_type==SUM || next_type==MULTI || next_type==MINUS
+                || next_type==B_AND || next_type==B_OR || next_type==B_XOR || next_type==COMMA
+                || next_type==EOL){
+                    iter = iter->next;
+                    continue;
+                }
+                else{
+                    return -1;
+                }
+            }
+            else if(type==OPEN_P){
+                if(next_type==VAR || next_type==INT || next_type==OPEN_P|| next_type==LS
+                   || next_type==RS || next_type==LR || next_type==RR || next_type==NOT){
+                    iter = iter->next;
+                    continue;
+                }
+                else{
+                    return -1;
+                }
+            }
+            else if(type==CLOSE_P){
+                if(next_type==CLOSE_P || next_type==SUM || next_type==MULTI || next_type==MINUS
+                   || next_type==B_AND || next_type==B_OR || next_type==B_XOR || next_type==COMMA
+                   || next_type==EOL){
+                    iter = iter->next;
+                    continue;
+                }
+                else{
+                    return -1;
+                }
+            }
+            else if(type==SUM || type==MULTI || type==MINUS || type==B_AND || type==B_OR
+                    || type==B_XOR || type == COMMA){
+                if(next_type==VAR || next_type==INT || next_type==OPEN_P || next_type==LS
+                || next_type==RS || next_type==LR || next_type==RR || next_type==NOT){
+                    iter = iter->next;
+                    continue;
+                }
+                else{
+                    return -1;
+                }
+            }
+            else if(type==LS || type==RS || type==LR || type==RR || type==NOT){
+                if(next_type==OPEN_P){
+                    iter = iter->next;
+                    continue;
+                }
+                else{
+                    return -1;
+                }
+            }
+            else{
+                return -1;
+            }
+        }
+    }
+    return 0;
 }
 
-int exp_syntax_checker(struct token* tokens, int length){
-
+int assign_syntax_checker(struct token* head, struct token* p_equal){
+    if(head->token_type!=VAR){
+        return -1;
+    }
+    if(head->next != p_equal){
+        return -1;
+    }
+    if(p_equal->next->token_type==EOL){
+        return -1;
+    }
+    else{
+        return exp_syntax_checker(p_equal->next);
+    }
 }
+
+
 /*
  * In the first loop of line:
  * Each position will be read one by one.
@@ -283,8 +396,8 @@ int main() {
         char *p = line;
         struct token *head = NULL;
         struct token * tail = NULL;
-        struct token *equal_p = NULL;
-        if(lexer(p, strlen(p), &head, &tail,&equal_p) != -1){
+        struct token *p_equal = NULL;
+        if(lexer(p, strlen(p), &head, &tail,&p_equal) != -1){
             struct token* iter = head;
             int a = 0;
             while(iter->token_type!=EOL){
@@ -293,17 +406,19 @@ int main() {
                 a++;
                 iter = iter->next;
             }
-            iter = tail;
-            a = 0;
-            while(iter->token_type!=VAR){
-                printf("%d:     ",a);
-                printf("%s\n",iter->token_val);
-                a++;
-                iter = iter->prev;
-            }
         }
         else{
             printf("Error!\n");
+        }
+        if(p_equal!=NULL){
+            if(assign_syntax_checker(head, p_equal)!=0){
+                printf("Error!\n");
+            }
+        }
+        else{
+            if(exp_syntax_checker(head)!=0){
+                printf("Error!\n");
+            }
         }
         printf("%s ",">");
     }
