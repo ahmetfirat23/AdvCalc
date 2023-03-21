@@ -615,7 +615,7 @@ int reformat_token_list(struct token** head){
 //     Detect close paranthesis
 
     if (head->next->token_type == CLOSE_P) {
-        if (head->prev->prev->token_type == NOT) {
+        if (head->prev->prev != NULL && head->prev->prev->token_type == NOT) {
             int val;
 
             sscanf(head->token_val, "%d", &val);
@@ -679,11 +679,14 @@ int main() {
             }
             if (error_code == 0) {
                 if (head->token_type != EOL) {
+
                     if (p_equal != NULL) {
                    int res = calculate(p_equal->next);
+
                    char *var_name = p_equal->prev->token_val;
+
                    int declared = 0;
-                   for(int i = 0; i <= VAR_IDX; i++) {
+                   for(int i = 0; i < VAR_IDX; i++) {
                     if (strcmp(VAR_KEYS[i], var_name) == 0) {
                         VARS[i] = res;
                         declared = 1;
