@@ -405,13 +405,13 @@ int reformat_token_list(struct token **head) {
             iter->token_type = INT;
             while (i < VAR_IDX) {
                 if (strcmp(iter->token_val, VAR_KEYS[i]) == 0) {
-                    sprintf(iter->token_val, "%d", VARS[i]);
+                    sprintf(iter->token_val, "%lld", VARS[i]);
                     break;
                 }
                 i++;
             }
             if (i == VAR_IDX) {
-                sprintf(iter->token_val, "%d", 0);
+                sprintf(iter->token_val, "%lld", 0);
             }
         }
         iter = iter->next;
