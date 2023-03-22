@@ -411,7 +411,8 @@ int reformat_token_list(struct token **head) {
                 i++;
             }
             if (i == VAR_IDX) {
-                sprintf(iter->token_val, "%lld", 0);
+                long long val = 0;
+                sprintf(iter->token_val, "%lld", val);
             }
         }
         iter = iter->next;
