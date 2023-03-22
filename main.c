@@ -44,7 +44,7 @@ char SIGNS[] = {'=', '+', '-', '*', '&', '|', '(', ')', ',', '%'};
  * VAR_IDX holds next free index of the lookup table, must be updated when new var added
  * */
 char *VAR_KEYS[128];
-int VARS[128];
+long long VARS[128];
 int VAR_IDX = 0;
 
 /*
@@ -423,18 +423,19 @@ int reformat_token_list(struct token **head) {
 }
 
 /*
- * TODO COMMENT HERE
+ * Takes pointer to operation and the type of the operation,
+ * checks for operation type and apply a proper process,
+ * assigns the result to a token and gets rid of operation. e.g. (5 + 2 * 3) => (5 + 6) => (11)
  * */
-void calculate_opr(struct token *head, token_type type) {
-    struct token *left_side = head->prev;
-    struct token *right_side = head->next;
-    int left_value;
-    //TODO CHECK STRTOL FOR 64 BIT INTEGER
-    sscanf(left_side->token_val, "%d", &left_value);
-    int right_value;
-    //TODO CHECK STRTOL FOR 64 BIT INTEGER
-    sscanf(right_side->token_val, "%d", &right_value);
-    int opr_result = 0;
+void calculate_opr(struct token *opr, token_type type) {
+    struct token *left_side = opr->prev;
+    struct token *right_side = opr->next;
+    long long left_value;
+    sscanf(left_side->token_val, "%lld", &left_value);
+    long long right_value;
+    sscanf(right_side->token_val, "%lld", &right_value);
+
+    long long opr_result = 0;
     switch (type) {
         case MULTI:
             opr_result = left_value * right_value;
@@ -476,16 +477,13 @@ void calculate_opr(struct token *head, token_type type) {
             opr_result = (left_value >> right_value) | (left_value << (32 - right_value));
             break;
 
-
         default:
-            //TODO REMOVE DEBUGGING STATEMENTS
-            printf("Error! something wrong with calculate_opr()");
+            break;
     }
 
-    char string_result[16];
+    char string_result[24];
 
-    //TODO CHECK FOR 64 BIT INTEGER
-    sprintf(string_result, "%d", opr_result);
+    sprintf(string_result, "%lld", opr_result);
     strcpy(left_side->token_val, string_result);
 
     left_side->next = right_side->next;
@@ -493,9 +491,13 @@ void calculate_opr(struct token *head, token_type type) {
 }
 
 /*
- * TODO COMMENT HERE
+ * Takes the head of token list, traverses it to fulfill operations with respect to
+ * precedence.
+ * Parentheses expressions handled with recursive calls, and all other operations
+ * ( * , + , -, &, |, ...)  handled with while loops in order.
+ * Uses calculate_opr() to handle operations.
  * */
-int calculate(struct token *head) {
+long long calculate(struct token *head) {
     if (head->token_type == NOT) {
         head = head->next;
     }
@@ -504,9 +506,9 @@ int calculate(struct token *head) {
     //Loop for parentheses
     while (temp_head->token_type != CLOSE_P && temp_head->token_type != EOL) {
         if (temp_head->token_type == OPEN_P) {
-            int parenthesis_result = calculate(temp_head->next);
-            char string_result[16];
-            sprintf(string_result, "%d", parenthesis_result); //TODO CHECK FOR 64 BIT INTEGER
+            long long parenthesis_result = calculate(temp_head->next);
+            char string_result[24];
+            sprintf(string_result, "%lld", parenthesis_result); //TODO CHECK FOR 64 BIT INTEGER
             temp_head->token_type = INT;
             strcpy(temp_head->token_val, string_result);
         }
@@ -521,14 +523,12 @@ int calculate(struct token *head) {
         }
         temp_head = temp_head->next;
     }
-
+    //Loop for addition and subtraction
     temp_head = head;
 
     while (temp_head->token_type != CLOSE_P && temp_head->token_type != EOL) {
         if (temp_head->token_type == SUM) {
-
             calculate_opr(temp_head, SUM);
-            //printf("%s\n", temp_head->prev->token_val); //TODO REMOVE DEBUGGING STATEMENT
         }
         if (temp_head->token_type == MINUS) {
             calculate_opr(temp_head, MINUS);
@@ -536,13 +536,18 @@ int calculate(struct token *head) {
         temp_head = temp_head->next;
     }
 
-    //Loop for binary operations
+    //Loop for bitwise and
     temp_head = head;
-    // printf("%s\n", temp_head->next->token_val); //TODO REMOVE DEBUGGING STATEMET
     while (temp_head->token_type != CLOSE_P && temp_head->token_type != EOL) {
         if (temp_head->token_type == B_AND) {
             calculate_opr(temp_head, B_AND);
         }
+        temp_head = temp_head->next;
+    }
+
+    //Loop for bitwise or
+    temp_head = head;
+    while (temp_head->token_type != CLOSE_P && temp_head->token_type != EOL) {
         if (temp_head->token_type == B_OR) {
             calculate_opr(temp_head, B_OR);
         }
@@ -570,14 +575,13 @@ int calculate(struct token *head) {
         temp_head = temp_head->next;
     }
 
-    //Detect close parenthesis
+    //Detect close parenthesis and check for NOT function
     if (head->next->token_type == CLOSE_P) {
         if (head->prev->prev != NULL && head->prev->prev->token_type == NOT) {
-            int val;
-            //TODO CHECK STRTOL FOR 64 BIT INTEGER
-            sscanf(head->token_val, "%d", &val);
-            char string_result[16];
-            sprintf(string_result, "%d", ~val); //TODO CHECK FOR 64 BIT INTEGER
+            long long val;
+            sscanf(head->token_val, "%lld", &val);
+            char string_result[24];
+            sprintf(string_result, "%lld", ~val);
             strcpy(head->token_val, string_result);
             if (head->prev->prev->prev == NULL) {
                 head->prev->prev = NULL;
@@ -590,11 +594,9 @@ int calculate(struct token *head) {
         head->next->next->prev = head->prev;
     }
 
-    int result;
+    long long result;
 
-    //sscanf((tokens->token_type == INT)? tokens->token_val : "0", "%d", &result); //TODO REMOVE DEBUGGING STATEMENT
-    //TODO CHECK STRTOL FOR 64 BIT INTEGER
-    sscanf(head->token_val, "%d", &result);
+    sscanf(head->token_val, "%lld", &result);
     return result;
 }
 
@@ -653,7 +655,7 @@ int main() {
             if (error_code == 0) {
                 if (head->token_type != EOL) {
                     if (p_equal != NULL) {
-                        int res = calculate(p_equal->next);
+                        long long res = calculate(p_equal->next);
                         char *var_name = calloc(256, sizeof(char));
                         strcpy(var_name, p_equal->prev->token_val);
 
@@ -671,8 +673,8 @@ int main() {
                             VAR_IDX++;
                         }
                     } else {
-                        int res = calculate(head);
-                        printf("%d\n", res);
+                        long long res = calculate(head);
+                        printf("%lld\n", res);
                     }
                 }
             } else {
