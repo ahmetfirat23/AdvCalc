@@ -471,11 +471,11 @@ void calculate_opr(struct token *opr, token_type type) {
             break;
 
         case LR:
-            opr_result = (left_value << right_value) | (left_value >> (64 - right_value));
+            opr_result = (long long)((((unsigned long long)left_value) << right_value) | (((unsigned long long)left_value) >> (64 - right_value)));
             break;
 
         case RR:
-            opr_result = (left_value >> right_value) | (left_value << (64 - right_value));
+            opr_result = (long long)((((unsigned long long)left_value) >> right_value) | (((unsigned long long)left_value) << (64 - right_value)));
             break;
 
         default:
