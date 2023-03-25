@@ -255,6 +255,7 @@ int lexer(char *p, int length, struct token **head, struct token **tail, struct 
 int exp_syntax_checker(struct token *head) {
     struct token *iter = head;
     int p_count = 0;
+    int limiting_p_count = 0;
     int func_count = 0;
     while (iter->token_type != EOL) {
         if (p_count < 0 || func_count < 0) {
@@ -283,6 +284,7 @@ int exp_syntax_checker(struct token *head) {
             } else if (type == B_XOR || type == LS || type == RS || type == LR || type == RR || type == NOT) {
                 if (type != NOT) {
                     func_count++;
+                    limiting_p_count = p_count + 1;
                 }
                 if (next_type == OPEN_P) {
                     iter = iter->next;
@@ -325,6 +327,9 @@ int exp_syntax_checker(struct token *head) {
                        || type == COMMA) {
                 if (type == COMMA) {
                     func_count--;
+                    if(limiting_p_count > p_count){
+                        return -1;
+                    }
                 }
                 if (next_type == VAR || next_type == INT || next_type == OPEN_P || next_type == B_XOR
                     || next_type == LS || next_type == RS || next_type == LR || next_type == RR
@@ -337,6 +342,7 @@ int exp_syntax_checker(struct token *head) {
             } else if (type == B_XOR || type == LS || type == RS || type == LR || type == RR || type == NOT) {
                 if (type != NOT) {
                     func_count++;
+                    limiting_p_count = p_count + 1;
                 }
                 if (next_type == OPEN_P) {
                     iter = iter->next;
