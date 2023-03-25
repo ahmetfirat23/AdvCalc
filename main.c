@@ -254,13 +254,40 @@ int lexer(char *p, int length, struct token **head, struct token **tail, struct 
  */
 int exp_syntax_checker(struct token *head) {
     struct token *iter = head;
-    int p_count = 0;
-    int limiting_p_count = 0;
-    int func_count = 0;
+    int func_count = 0;//Count of unmatched functions by commas
+    int p_count = 0;//Count of unmatched open parentheses by closed parentheses
+    int limiting_p_count = 0; //Count of unmatched parentheses when the current function seen. Unless the function exited p_count can not be less than or equal to this limit. When exiting the current function this number is one less than p_count
+    int limiting_func_count = 0; //Count of unmatched functions when the current function seen. Current function is also counted towards this number. Unless the function exited func_count can not be less than this limit minus one. When the current function matched with a comma this value is one bigger than func_count
+
+    int func_stack[512];//Current limiting elements and previous elements are hold
+    int stack_idx = 0;//Points empty stack position
+
+
     while (iter->token_type != EOL) {
         if (p_count < 0 || func_count < 0) {
             return -1;
         }
+
+        //Check commas match functions in recursive functions
+        if(stack_idx>=2 && iter->token_type == CLOSE_P){ //Current limiting values are held at the top of the stack.
+            if(limiting_p_count + 1 == p_count){
+                if(limiting_func_count == func_count + 1){
+                    if (stack_idx>=4){//If there is a  previous value in the stack then index must be >= 4
+                        stack_idx-=2; //Pop the current element from stack
+                        limiting_func_count = func_stack[--stack_idx]; //Update limiting values
+                        limiting_p_count = func_stack[--stack_idx];
+                        stack_idx+=2; //Point to empty slot
+                    }
+                    else{//If there is only current element in the stack, recursion is ended
+                        stack_idx = 0; //Empty out the stack
+                    }
+                }
+                else{
+                    return -1;
+                }
+            }
+        }
+
         token_type type = iter->token_type;
         token_type next_type = iter->next->token_type;
         if (iter->prev == NULL || iter->prev->token_type == EQUAL) {
@@ -284,7 +311,10 @@ int exp_syntax_checker(struct token *head) {
             } else if (type == B_XOR || type == LS || type == RS || type == LR || type == RR || type == NOT) {
                 if (type != NOT) {
                     func_count++;
-                    limiting_p_count = p_count + 1;
+                    limiting_p_count = p_count;
+                    limiting_func_count = func_count;
+                    func_stack[stack_idx++] = limiting_p_count;
+                    func_stack[stack_idx++] = limiting_func_count;
                 }
                 if (next_type == OPEN_P) {
                     iter = iter->next;
@@ -327,7 +357,7 @@ int exp_syntax_checker(struct token *head) {
                        || type == COMMA) {
                 if (type == COMMA) {
                     func_count--;
-                    if(limiting_p_count > p_count){
+                    if(limiting_p_count >= p_count){ //Seen outside of a function
                         return -1;
                     }
                 }
@@ -342,7 +372,10 @@ int exp_syntax_checker(struct token *head) {
             } else if (type == B_XOR || type == LS || type == RS || type == LR || type == RR || type == NOT) {
                 if (type != NOT) {
                     func_count++;
-                    limiting_p_count = p_count + 1;
+                    limiting_p_count = p_count;
+                    limiting_func_count = func_count;
+                    func_stack[stack_idx++] = limiting_p_count;
+                    func_stack[stack_idx++] = limiting_func_count;
                 }
                 if (next_type == OPEN_P) {
                     iter = iter->next;
