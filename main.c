@@ -76,8 +76,8 @@ int is_keyword(char *word) {
 
 /*
  * These functions will receive an iterator pointer when their corresponding type first encountered in lexer.
- * They will read from pointer until an unrelevant char been encountered, and then they will return the token or throw error.
- * Unrelevance is defined for each type since it differs which type can follow which type.
+ * They will read from pointer until an irrelevant char been encountered, and then they will return the token or throw error.
+ * Irrelevance is defined for each type since it differs which type can follow which type.
  * Pointer's current position is updated in these functions since it is used in the loop of lexer.
  * */
 
@@ -357,7 +357,7 @@ int exp_syntax_checker(struct token *head) {
                        || type == COMMA) {
                 if (type == COMMA) {
                     func_count--;
-                    if(limiting_p_count >= p_count){ //Seen outside of a function
+                    if(limiting_p_count + 1 != p_count){ //Seen different place than function scope
                         return -1;
                     }
                 }
