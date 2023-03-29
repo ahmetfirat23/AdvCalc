@@ -1,5 +1,5 @@
-advcalc.exe:	main.o
-			gcc main.o -o advcalc.exe
+advcalc:	main.o
+		gcc main.o -o advcalc
 
-advcalc.o:		main.c
-			gcc -c main.c 
+main.o:		main.c
+		gcc -c main.c 
