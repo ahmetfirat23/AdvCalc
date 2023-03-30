@@ -655,6 +655,9 @@ void print_debug(struct token *head) {
  * Free memory kept by linked list
  * */
 void free_ll(struct token *head) {
+    if(head==NULL){
+        return;
+    }
     struct token *iter = head;
     struct token *freed;
     while (iter->token_type != EOL) {
@@ -665,14 +668,18 @@ void free_ll(struct token *head) {
 }
 
 int main() {
+    setbuf(stdout, NULL);
     int error_code = 0;
+    int exit_code = 0;
     char line[256 + 1] = "";
     printf("%s ", ">");
 
     while (fgets(line, sizeof(line), stdin)) {
         error_code = 0;
-        if (line == NULL) { // Stop when CTRL+D
-            break;
+        if (line[strlen(line)-1]!='\n') { // Stop when CTRL+D
+            strcat(line,"\n");
+            printf("\n");
+            exit_code = 1;
         }
 
         char *p = line;
@@ -724,7 +731,8 @@ int main() {
         } else {
             printf("Error!\n");
         }
-
-        printf("%s ", ">");
+        if(exit_code==0){
+            printf("%s ", ">");
+        }
     }
 }
