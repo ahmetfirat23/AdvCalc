@@ -463,9 +463,9 @@ int reformat_token_list(struct token **head) {
 }
 
 /*
- * Takes pointer to operation and the type of the operation,
- * checks for operation type and apply a proper process,
- * assigns the result to a token and gets rid of operation. e.g. (5 + 2 * 3) => (5 + 6) => (11)
+ * Take pointer to operation and the type of the operation,
+ * check for operation type and apply a proper process,
+ * assign the result to a token and gets rid of operation. e.g. (5 + 2 * 3) => (5 + 6) => (11)
  * */
 void calculate_opr(struct token *opr, token_type type) {
     struct token *left_side = opr->prev;
@@ -531,11 +531,11 @@ void calculate_opr(struct token *opr, token_type type) {
 }
 
 /*
- * Takes the head of token list, traverses it to fulfill operations with respect to
+ * Take the head of token list, traverse it to fulfill operations with respect to
  * precedence.
  * Parentheses expressions handled with recursive calls, and all other operations
  * ( * , + , -, &, |, ...)  handled with while loops in order.
- * Uses calculate_opr() to handle operations.
+ * Use calculate_opr() to handle operations.
  * */
 long long calculate(struct token *head) {
     if (head->token_type == NOT) {
